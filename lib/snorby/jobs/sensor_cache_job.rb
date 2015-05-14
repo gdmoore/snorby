@@ -209,33 +209,26 @@ module Snorby
 
                 # incident emails
                 if user.email_reports
-                  current_hour = current_time.change(:min => 0)
-                  current_half_hour = if (current_time > current_hour + 30.minutes)
-                    current_hour + 30.minutes
-                  else
-                    current_hour
-                  end
 
-                  last_report_half_hour = if user.last_email_report_at.present?
-                                          user.last_email_report_at.in_time_zone(user.timezone)
-                                        else
-                                          (Time.now - 99.days).in_time_zone(user.timezone)
-                                        end
-
-                  p "email report times: #{current_half_hour} #{last_report_half_hour}" 
-                  if current_half_hour > last_report_half_hour 
-
-                    report_cache = []
-                    Sensor.each do |sensor|
-                      report_cache.push(sensor.cache.last)
+                  last_report = if user.last_email_report_at.present?
+                                   user.last_email_report_at
+                                else
+                                    (Time.now - 99.days)
+                                end
+                  report_cache = []
+                  Sensor.each do |sensor|
+                    # still misses edge case during rollover since created_at of new row == updated_at of last row?
+                    if sensor.cache.last.updated_at > last_report
+                        report_cache.push(sensor.cache.last)
+                        user.last_email_report_at = sensor.cache.last.updated_at
                     end
-
-                    logit "sending email report: #{current_half_hour}, #{last_report_half_hour} #{current_time.to_i} #{last_report_half_hour.to_i}", false
-                    user.send_update_report(report_cache)
-                    user.last_email_report_at = current_half_hour
-                    user.save!
                   end
 
+                  total_event_count = report_cache.map(&:event_count).sum
+                  if total_event_count > 0
+                    user.save!
+                    user.send_update_report(report_cache)
+                  end
 
                 end
 
@@ -348,6 +341,7 @@ module Snorby
               :src_ips => fetch_src_ip_metrics,
               :dst_ips => fetch_dst_ip_metrics,
               :signature_metrics => fetch_signature_metrics
+              #:created_at => DateTime.now  # need event.timestamp
             }
 
 

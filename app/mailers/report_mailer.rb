@@ -40,7 +40,8 @@ class ReportMailer < ActionMailer::Base
     p @data
     mail(:to => email,
       :from => (Setting.email? ? Setting.find(:email) : "snorby@snorby.org"),
-      :subject => "Snorby Event Report [Count: #{total_event_count}] #{@data.first.ran_at.strftime('%D %H:%M:%S %Z')} - #{(@data.first.ran_at + 30.minutes).strftime('%D %H:%M:%S %Z')}")
+      :body => "Signatures: #{@data.first.signature_metrics.keys} \nSource IPs: #{@data.first.src_ips.keys} \nDestination IPs: #{@data.first.dst_ips.keys} \n\nView:  http://leviathan:3000/ ",
+      :subject => "Snorby Event [Count: #{total_event_count}] ")
   end
 
 end
