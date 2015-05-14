@@ -217,7 +217,6 @@ module Snorby
                                 end
                   report_cache = []
                   Sensor.each do |sensor|
-                    # still misses edge case during rollover since created_at of new row == updated_at of last row?
                     if sensor.cache.last.updated_at > last_report
                         report_cache.push(sensor.cache.last)
                         user.last_email_report_at = sensor.cache.last.updated_at
@@ -341,7 +340,6 @@ module Snorby
               :src_ips => fetch_src_ip_metrics,
               :dst_ips => fetch_dst_ip_metrics,
               :signature_metrics => fetch_signature_metrics
-              #:created_at => DateTime.now  # need event.timestamp
             }
 
 
