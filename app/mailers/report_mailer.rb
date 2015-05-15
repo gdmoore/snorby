@@ -38,9 +38,12 @@ class ReportMailer < ActionMailer::Base
     @data = data
     total_event_count = data.map(&:event_count).sum
     p @data
+    sigs = data.map(&:signature_metrics).compact.map{ |k|  k.keys }.join(', ')
+    srcs = data.map(&:src_ips).compact.map{ |k|  k.keys }.join(', ')
+    dsts = data.map(&:dst_ips).compact.map{ |k|  k.keys }.join(', ')
     mail(:to => email,
       :from => (Setting.email? ? Setting.find(:email) : "snorby@snorby.org"),
-      :body => "Signatures: #{@data.first.signature_metrics.keys} \nSource IPs: #{@data.first.src_ips.keys} \nDestination IPs: #{@data.first.dst_ips.keys} \n\nView:  http://leviathan:3000/ ",
+      :body => "Signatures: #{sigs} \nSource IPs: #{srcs} \nDestination IPs: #{dsts} \n\nView:  http://leviathan:3000/ ",
       :subject => "Snorby Event [Count: #{total_event_count}] ")
   end
 

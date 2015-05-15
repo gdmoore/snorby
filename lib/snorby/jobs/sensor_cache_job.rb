@@ -217,16 +217,21 @@ module Snorby
                                 end
                   report_cache = []
                   Sensor.each do |sensor|
-                    if sensor.cache.last.updated_at > last_report
-                        report_cache.push(sensor.cache.last)
-                        user.last_email_report_at = sensor.cache.last.updated_at
+                    # check most recent cache + previous cache or else we may miss the edge case
+                    # (event in the last 10m window of cache + new cache created at same updated_at)
+                    (-2..-1).each do |i|
+                      cache = sensor.cache[i]
+                      if cache.updated_at > last_report
+                        report_cache.push(cache)
+                        user.last_email_report_at = cache.updated_at
+                      end
                     end
                   end
 
                   total_event_count = report_cache.map(&:event_count).sum
                   if total_event_count > 0
-                    user.save!
                     user.send_update_report(report_cache)
+                    user.save!
                   end
 
                 end
